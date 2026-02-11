@@ -1,4 +1,4 @@
-export const faqs = [
+export const faqData = [
     {
         id: 1,
         question: "Apa saja syarat pendaftaran Umroh?",
