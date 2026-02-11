@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import LiveChat from './components/LiveChat';
 import Home from './pages/Home';
 import PackageList from './pages/PackageList';
 import PackageDetail from './pages/PackageDetail';
@@ -37,10 +38,11 @@ function App() {
               <Route path="/promo" element={<Promo />} />
               <Route path="/guide" element={<Guide />} />
               <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:id" element={<div className="pt-24 container text-center">Halaman Detail Artikel (Coming Soon)</div>} />
+              <Route path="/blog/:id" element={<div className="pt-24 container text-center py-20">Halaman Detail Artikel (Coming Soon)</div>} />
               <Route path="/travel/:id" element={<TravelProfile />} />
             </Routes>
           </main>
+          <LiveChat />
           <Footer />
         </div>
       </Router>
