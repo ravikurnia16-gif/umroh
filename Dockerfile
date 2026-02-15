@@ -1,31 +1,35 @@
 # Stage 1: Build the React application
 FROM node:20-alpine as builder
-
 WORKDIR /app
-
-# Copy package.json and package-lock.json
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci
-
-# Copy the rest of the application code
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Stage 2: Serve the application with Nginx
-FROM nginx:alpine
+# Stage 2: Setup Backend Server
+FROM node:20-alpine
+WORKDIR /app
 
-# Copy the build output from the builder stage to Nginx html directory
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy server files
+COPY server/package*.json ./
+# Install production dependencies for server
+RUN npm ci --omit=dev
 
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy server source code
+COPY server/ .
+COPY server/prisma ./prisma
+# Generate Prisma Client
+RUN npx prisma generate
 
-# Expose port 80
+# Copy the build output from the builder stage
+COPY --from=builder /app/dist ./dist
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=80
+
+# Expose port (EasyPanel defaults to 80)
 EXPOSE 80
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start server (includes db sync and seed via npm start script)
+CMD ["npm", "start"]

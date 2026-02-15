@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  role      String   @default("USER") // USER, ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TravelAgent {
+  id            Int       @id @default(autoincrement())
+  name          String
+  logo          String?
+  rating        Float     @default(0)
+  totalPackages Int       @default(0)
+  description   String    @db.Text
+  location      String
+  verified      Boolean   @default(false)
+  packages      Package[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Package {
+  id            Int         @id @default(autoincrement())
+  title         String
+  travelId      Int
+  travel        TravelAgent @relation(fields: [travelId], references: [id])
+  price         Int
+  duration      Int
+  rating        Float       @default(0)
+  reviewCount   Int         @default(0)
+  departureDate DateTime
+  hotelMakkah   String?
+  hotelMadinah  String?
+  hotelTurki    String?
+  airlines      String?
+  image         String?
+  highlights    Json? // Array of strings
+  itinerary     Json? // Array of objects {day, title, desc}
+  facilities    Json? // Array of strings
+  terms         Json? // Array of strings
+  isPopular     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Promo {
+  id          Int      @id @default(autoincrement())
+  title       String
+  discount    String
+  code        String   @unique
+  endDate     DateTime
+  image       String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String
+  category  String
+  date      String // Using string for date format flexibility as per source data
+  image     String?
+  excerpt   String   @db.Text
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Faq {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  name      String
+  role      String?
+  rating    Int
+  comment   String   @db.Text
+  date      String
+  avatar    String?
+  createdAt DateTime @default(now())
+}
