@@ -32,8 +32,8 @@ const PackageCard = ({ packageData }) => {
                 </button>
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 text-white">
                     <div className="flex items-center gap-2">
-                        <img src={travel.logo} alt={travel.name} className="w-6 h-6 rounded-full bg-white p-0.5" />
-                        <span className="text-xs font-medium truncate">{travel.name}</span>
+                        <img src={travel?.logo || ''} alt={travel?.name || ''} className="w-6 h-6 rounded-full bg-white p-0.5" />
+                        <span className="text-xs font-medium truncate">{travel?.name}</span>
                     </div>
                 </div>
             </div>
@@ -58,7 +58,7 @@ const PackageCard = ({ packageData }) => {
 
                 {/* Hotel Info (Optional - Simplified) */}
                 <div className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-1">
-                    🏨 {hotel.makkah} &bull; {hotel.madinah}
+                    🏨 {hotel?.makkah} &bull; {hotel?.madinah}
                 </div>
 
                 <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">

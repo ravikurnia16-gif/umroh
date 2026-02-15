@@ -51,6 +51,20 @@ const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
+// Data Transformers
+const transformPackage = (pkg) => {
+    if (!pkg) return null;
+    return {
+        ...pkg,
+        hotel: pkg.hotel || {
+            makkah: pkg.hotelMakkah || '',
+            madinah: pkg.hotelMadinah || '',
+            turki: pkg.hotelTurki || ''
+        },
+        travel: pkg.travel || { name: 'Unknown Travel', logo: 'https://placehold.co/100x100?text=Travel' }
+    };
+};
+
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', port: PORT, db: 'connected' });
 });
@@ -76,7 +90,7 @@ app.get('/api/packages', asyncHandler(async (req, res) => {
     const packages = await prisma.package.findMany({
         where, orderBy, include: { travel: true }
     });
-    res.json(packages);
+    res.json(packages.map(transformPackage));
 }));
 
 app.get('/api/packages/:id', asyncHandler(async (req, res) => {
@@ -85,7 +99,7 @@ app.get('/api/packages/:id', asyncHandler(async (req, res) => {
         include: { travel: true }
     });
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
-    res.json(pkg);
+    res.json(transformPackage(pkg));
 }));
 
 app.get('/api/travels', asyncHandler(async (req, res) => {

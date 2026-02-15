@@ -130,11 +130,11 @@ const PackageDetail = () => {
                                             <div className="space-y-4">
                                                 <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg">
                                                     <span className="text-xs text-emerald-600 block mb-1">Makkah</span>
-                                                    <span className="font-bold block">{pkg.hotel.makkah}</span>
+                                                    <span className="font-bold block">{pkg.hotel?.makkah}</span>
                                                 </div>
                                                 <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg">
                                                     <span className="text-xs text-emerald-600 block mb-1">Madinah</span>
-                                                    <span className="font-bold block">{pkg.hotel.madinah}</span>
+                                                    <span className="font-bold block">{pkg.hotel?.madinah}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -177,10 +177,10 @@ const PackageDetail = () => {
                             {/* Booking Card */}
                             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700">
                                 <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-slate-700">
-                                    <img src={pkg.travel.logo} alt={pkg.travel.name} className="w-12 h-12 rounded-full border p-1" />
+                                    <img src={pkg.travel?.logo || ''} alt={pkg.travel?.name || ''} className="w-12 h-12 rounded-full border p-1" />
                                     <div>
                                         <span className="text-xs text-slate-500 block">Diselenggarakan oleh</span>
-                                        <h4 className="font-bold text-sm">{pkg.travel.name}</h4>
+                                        <h4 className="font-bold text-sm">{pkg.travel?.name}</h4>
                                     </div>
                                 </div>
 
