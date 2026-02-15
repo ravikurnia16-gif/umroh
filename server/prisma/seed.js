@@ -4,18 +4,18 @@ const prisma = new PrismaClient()
 
 const users = [
     {
-        email: "admin@umrohpedia.com",
-        password: "admin123", // Will be hashed below
+        email: "superadmin@umrohpedia.com",
+        password: "superadmin123",
         name: "Super Admin",
         role: "ADMIN",
-        phone: "08123456789"
+        phone: "081122334455"
     },
     {
-        email: "agent@shafira.com",
-        password: "agent123",
-        name: "Agent Shafira",
+        email: "agent_utama@shafira.com",
+        password: "shafira123",
+        name: "Agen Utama Shafira",
         role: "TRAVEL_AGENT",
-        travelId: 1, // Linked to Shafira Tour
+        travelId: 1, // Shafira Tour
         phone: "08987654321"
     },
     {
