@@ -1,5 +1,31 @@
 const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
+
+const users = [
+    {
+        email: "admin@umrohpedia.com",
+        password: "admin123", // Will be hashed below
+        name: "Super Admin",
+        role: "ADMIN",
+        phone: "08123456789"
+    },
+    {
+        email: "agent@shafira.com",
+        password: "agent123",
+        name: "Agent Shafira",
+        role: "TRAVEL_AGENT",
+        travelId: 1, // Linked to Shafira Tour
+        phone: "08987654321"
+    },
+    {
+        email: "jamaah@gmail.com",
+        password: "user123",
+        name: "Bapak Jamaah",
+        role: "USER",
+        phone: "085566778899"
+    }
+];
 
 const travels = [
     {
@@ -320,6 +346,19 @@ async function main() {
             where: { id: review.id },
             update: {},
             create: review,
+        });
+    }
+
+    // Seed Users
+    for (const user of users) {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        await prisma.user.upsert({
+            where: { email: user.email },
+            update: {},
+            create: {
+                ...user,
+                password: hashedPassword
+            },
         });
     }
 

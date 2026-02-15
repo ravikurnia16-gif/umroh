@@ -47,9 +47,63 @@ app.use((req, res, next) => {
 app.use(express.static(staticPath));
 
 // 5. API Routes
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { auth, JWT_SECRET } = require('./middleware/auth');
+
+// 5. API Routes
 const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
+
+// --- Auth Routes ---
+app.post('/api/auth/register', asyncHandler(async (req, res) => {
+    const { email, password, name, phone, role } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+        return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+        data: {
+            email,
+            password: hashedPassword,
+            name,
+            phone,
+            role: role || 'USER'
+        }
+    });
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+    res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+}));
+
+app.post('/api/auth/login', asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+}));
+
+app.get('/api/auth/me', auth, asyncHandler(async (req, res) => {
+    const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { id: true, email: true, name: true, role: true, phone: true, travelId: true }
+    });
+    res.json(user);
+}));
 
 // Data Transformers
 const transformPackage = (pkg) => {
