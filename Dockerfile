@@ -23,11 +23,11 @@ RUN npm ci --omit=dev
 # Copy server source code
 COPY server/ .
 
+# Install OpenSSL for Prisma (Required before generation)
+RUN apk add --no-cache openssl
+
 # Generate Prisma Client
 RUN npx prisma generate
-
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
 
 # Set environment variables
 ENV NODE_ENV=production
