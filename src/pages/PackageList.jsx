@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { packages } from '../data/packages';
+import { api } from '../services/api';
+import { packages as staticPackages } from '../data/packages';
 import { travels } from '../data/travels';
 import PackageCard from '../components/PackageCard';
 import ScrollReveal from '../components/ScrollReveal';
 import CompareModal from '../components/CompareModal';
-import { FiFilter, FiSearch, FiChevronDown, FiBarChart2, FiCheck } from 'react-icons/fi';
+import { FiFilter, FiSearch, FiChevronDown, FiBarChart2, FiCheck, FiLoader } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PackageList = () => {
@@ -21,9 +22,36 @@ const PackageList = () => {
     const [selectedForCompare, setSelectedForCompare] = useState([]);
     const [isCompareOpen, setIsCompareOpen] = useState(false);
 
+    // Data State
+    const [packagesData, setPackagesData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch Data
+    useEffect(() => {
+        const fetchPackages = async () => {
+            setLoading(true);
+            try {
+                // Fetch all packages and filter client-side for now 
+                // (In a larger app, filtering should be server-side)
+                const data = await api.getPackages();
+                if (data && data.length > 0) {
+                    setPackagesData(data);
+                } else {
+                    setPackagesData(staticPackages); // Fallback
+                }
+            } catch (error) {
+                console.error("Failed to fetch packages:", error);
+                setPackagesData(staticPackages); // Fallback to static on error
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPackages();
+    }, []);
+
     // Filter Logic
     const filteredPackages = useMemo(() => {
-        return packages.filter(pkg => {
+        return packagesData.filter(pkg => {
             const matchPrice = pkg.price <= priceRange;
             const matchTravel = selectedTravels.length === 0 || selectedTravels.includes(pkg.travel.id);
             const matchSearch = pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -41,7 +69,7 @@ const PackageList = () => {
             if (sortBy === 'rating') return b.rating - a.rating;
             return 0; // recommended
         });
-    }, [priceRange, selectedDuration, selectedTravels, sortBy, searchQuery]);
+    }, [packagesData, priceRange, selectedDuration, selectedTravels, sortBy, searchQuery]);
 
     const toggleTravelFilter = (id) => {
         setSelectedTravels(prev =>
@@ -160,35 +188,41 @@ const PackageList = () => {
                         </div>
 
                         {/* Packages Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-                            {filteredPackages.length > 0 ? (
-                                filteredPackages.map((pkg, index) => (
-                                    <ScrollReveal key={pkg.id} delay={index * 0.05}>
-                                        <div className="relative h-full">
-                                            <PackageCard packageData={pkg} />
-                                            <div className="absolute top-3 left-3 z-10">
-                                                <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-2 py-1.5 rounded-lg text-[10px] font-bold shadow-sm hover:scale-105 transition-all border ${selectedForCompare.find(p => p.id === pkg.id) ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-white/90 dark:bg-slate-800/90 border-slate-100 dark:border-slate-700'}`}>
-                                                    <input
-                                                        type="checkbox"
-                                                        className="hidden"
-                                                        checked={!!selectedForCompare.find(p => p.id === pkg.id)}
-                                                        onChange={() => handleCompareToggle(pkg)}
-                                                    />
-                                                    {selectedForCompare.find(p => p.id === pkg.id) ? <FiCheck /> : <FiBarChart2 />}
-                                                    {selectedForCompare.find(p => p.id === pkg.id) ? 'Terpilih' : 'Bandingkan'}
-                                                </label>
+                        {loading ? (
+                            <div className="flex justify-center items-center py-20">
+                                <div className="animate-spin text-emerald-600 text-4xl"><FiLoader /></div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+                                {filteredPackages.length > 0 ? (
+                                    filteredPackages.map((pkg, index) => (
+                                        <ScrollReveal key={pkg.id} delay={index * 0.05}>
+                                            <div className="relative h-full">
+                                                <PackageCard packageData={pkg} />
+                                                <div className="absolute top-3 left-3 z-10">
+                                                    <label className={`flex items-center gap-2 cursor-pointer backdrop-blur-sm px-2 py-1.5 rounded-lg text-[10px] font-bold shadow-sm hover:scale-105 transition-all border ${selectedForCompare.find(p => p.id === pkg.id) ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-white/90 dark:bg-slate-800/90 border-slate-100 dark:border-slate-700'}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="hidden"
+                                                            checked={!!selectedForCompare.find(p => p.id === pkg.id)}
+                                                            onChange={() => handleCompareToggle(pkg)}
+                                                        />
+                                                        {selectedForCompare.find(p => p.id === pkg.id) ? <FiCheck /> : <FiBarChart2 />}
+                                                        {selectedForCompare.find(p => p.id === pkg.id) ? 'Terpilih' : 'Bandingkan'}
+                                                    </label>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </ScrollReveal>
-                                ))
-                            ) : (
-                                <div className="col-span-full py-20 text-center">
-                                    <FiSearch className="text-6xl text-slate-200 mx-auto mb-4" />
-                                    <h3 className="text-xl font-bold mb-2">Paket tidak ditemukan</h3>
-                                    <p className="text-slate-500">Coba ubah filter atau kata kunci pencarian Anda</p>
-                                </div>
-                            )}
-                        </div>
+                                        </ScrollReveal>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-20 text-center">
+                                        <FiSearch className="text-6xl text-slate-200 mx-auto mb-4" />
+                                        <h3 className="text-xl font-bold mb-2">Paket tidak ditemukan</h3>
+                                        <p className="text-slate-500">Coba ubah filter atau kata kunci pencarian Anda</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

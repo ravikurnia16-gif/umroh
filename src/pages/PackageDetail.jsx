@@ -1,17 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FiArrowLeft, FiClock, FiMapPin, FiStar, FiCalendar, FiCheck, FiInfo } from 'react-icons/fi';
-import { packages } from '../data/packages';
+import { FiArrowLeft, FiClock, FiMapPin, FiStar, FiCalendar, FiCheck, FiInfo, FiLoader } from 'react-icons/fi';
+import { api } from '../services/api';
+import { packages as staticPackages } from '../data/packages';
 import InstallmentCalc from '../components/InstallmentCalc';
 import ScrollReveal from '../components/ScrollReveal';
 
 const PackageDetail = () => {
     const { id } = useParams();
-    const pkg = packages.find(p => p.id === parseInt(id));
+    const [pkg, setPkg] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('itinerary');
 
+    useEffect(() => {
+        const fetchPackage = async () => {
+            setLoading(true);
+            try {
+                const data = await api.getPackageById(id);
+                if (data) {
+                    setPkg(data);
+                } else {
+                    // Fallback to static if API returns nothing
+                    const staticPkg = staticPackages.find(p => p.id === parseInt(id));
+                    setPkg(staticPkg);
+                }
+            } catch (error) {
+                console.error("Failed to fetch package detail:", error);
+                const staticPkg = staticPackages.find(p => p.id === parseInt(id));
+                setPkg(staticPkg);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPackage();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <div className="pt-32 pb-20 min-h-screen bg-white dark:bg-slate-900 flex justify-center items-start">
+                <FiLoader className="animate-spin text-4xl text-emerald-600" />
+            </div>
+        );
+    }
+
     if (!pkg) {
-        return <div className="pt-24 container text-center">Paket tidak ditemukan</div>;
+        return <div className="pt-32 container text-center dark:text-white">Paket tidak ditemukan</div>;
     }
 
     return (
@@ -80,7 +113,7 @@ const PackageDetail = () => {
                             <div className="min-h-[300px]">
                                 {activeTab === 'itinerary' && (
                                     <div className="space-y-8 pl-4 border-l-2 border-emerald-100 dark:border-emerald-900/30">
-                                        {pkg.itinerary.map((item, index) => (
+                                        {pkg.itinerary && pkg.itinerary.map((item, index) => (
                                             <div key={index} className="relative">
                                                 <div className="absolute -left-[21px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-white dark:border-slate-900"></div>
                                                 <h4 className="font-bold text-lg mb-1">Hari ke-{item.day}: {item.title}</h4>
@@ -108,7 +141,7 @@ const PackageDetail = () => {
                                         <div>
                                             <h4 className="font-bold text-lg mb-4">Fasilitas Termasuk</h4>
                                             <ul className="space-y-2">
-                                                {pkg.facilities.map((fac, idx) => (
+                                                {pkg.facilities && pkg.facilities.map((fac, idx) => (
                                                     <li key={idx} className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                                                         <FiCheck className="text-emerald-500" /> {fac}
                                                     </li>
@@ -125,7 +158,7 @@ const PackageDetail = () => {
                                             <div>
                                                 <h4 className="font-bold text-lg mb-2">Syarat & Ketentuan</h4>
                                                 <ul className="space-y-2 list-disc list-inside text-slate-600 dark:text-slate-300">
-                                                    {pkg.terms.map((term, idx) => (
+                                                    {pkg.terms && pkg.terms.map((term, idx) => (
                                                         <li key={idx}>{term}</li>
                                                     ))}
                                                 </ul>

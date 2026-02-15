@@ -1,10 +1,34 @@
-import React from 'react';
-import { FiChevronRight, FiHelpCircle } from 'react-icons/fi';
-import { faqData } from '../data/faq';
+import React, { useState, useEffect } from 'react';
+import { FiChevronRight, FiHelpCircle, FiLoader } from 'react-icons/fi';
+import { api } from '../services/api';
+import { faqData as staticFaq } from '../data/faq';
 import ScrollReveal from '../components/ScrollReveal';
 import FAQ from '../components/FAQ';
 
 const Guide = () => {
+    const [faqData, setFaqData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFaq = async () => {
+            setLoading(true);
+            try {
+                const data = await api.getFaq();
+                if (data && data.length > 0) {
+                    setFaqData(data);
+                } else {
+                    setFaqData(staticFaq);
+                }
+            } catch (error) {
+                console.error("Failed to fetch FAQ:", error);
+                setFaqData(staticFaq);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchFaq();
+    }, []);
+
     return (
         <div className="pt-24 pb-20 min-h-screen bg-slate-50 dark:bg-slate-900">
             <div className="container">
@@ -62,7 +86,13 @@ const Guide = () => {
                             <h2 className="text-2xl font-serif font-bold">Frequently Asked Questions</h2>
                         </div>
 
-                        <FAQ data={faqData} />
+                        {loading ? (
+                            <div className="flex justify-center py-12">
+                                <FiLoader className="animate-spin text-3xl text-emerald-600" />
+                            </div>
+                        ) : (
+                            <FAQ data={faqData} />
+                        )}
 
                         <div className="mt-12 bg-slate-100 dark:bg-slate-800/50 rounded-2xl p-8 text-center border-2 border-dashed border-slate-200 dark:border-slate-700">
                             <p className="text-slate-600 dark:text-slate-400 mb-4">Masih punya pertanyaan lain?</p>

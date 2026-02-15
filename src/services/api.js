@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3000/api';
+// Use relative path for production (served by same origin) or localhost for dev if proxied
+const API_URL = '/api';
 
 export const api = {
     // Packages

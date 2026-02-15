@@ -1,18 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { travels } from '../data/travels';
-import { packages } from '../data/packages';
+import { api } from '../services/api';
+import { travels as staticTravels } from '../data/travels';
+import { packages as staticPackages } from '../data/packages';
 import PackageCard from '../components/PackageCard';
 import ScrollReveal from '../components/ScrollReveal';
-import { FiCheckCircle, FiStar, FiMapPin } from 'react-icons/fi';
+import { FiCheckCircle, FiStar, FiMapPin, FiLoader } from 'react-icons/fi';
 
 const TravelProfile = () => {
     const { id } = useParams();
-    const travel = travels.find(t => t.id === parseInt(id));
-    const travelPackages = packages.filter(p => p.travel.id === parseInt(id));
+    const [travel, setTravel] = useState(null);
+    const [travelPackages, setTravelPackages] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTravel = async () => {
+            setLoading(true);
+            try {
+                const data = await api.getTravelById(id);
+                if (data) {
+                    setTravel(data);
+                    // The API includes packages in the travel object
+                    if (data.packages) {
+                        setTravelPackages(data.packages);
+                    } else {
+                        setTravelPackages([]);
+                    }
+                } else {
+                    // Fallback
+                    const staticTravel = staticTravels.find(t => t.id === parseInt(id));
+                    setTravel(staticTravel);
+                    const staticPkgs = staticPackages.filter(p => p.travel.id === parseInt(id));
+                    setTravelPackages(staticPkgs);
+                }
+            } catch (error) {
+                console.error("Failed to fetch travel profile:", error);
+                const staticTravel = staticTravels.find(t => t.id === parseInt(id));
+                setTravel(staticTravel);
+                const staticPkgs = staticPackages.filter(p => p.travel.id === parseInt(id));
+                setTravelPackages(staticPkgs);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTravel();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <div className="pt-32 pb-20 min-h-screen bg-white dark:bg-slate-900 flex justify-center items-start">
+                <FiLoader className="animate-spin text-4xl text-emerald-600" />
+            </div>
+        );
+    }
 
     if (!travel) {
-        return <div className="pt-24 container text-center">Travel Agent tidak ditemukan</div>;
+        return <div className="pt-32 container text-center dark:text-white">Travel Agent tidak ditemukan</div>;
     }
 
     return (
@@ -38,7 +81,7 @@ const TravelProfile = () => {
                         <div className="flex items-center justify-center md:justify-start gap-4 mb-4 text-sm text-slate-500">
                             <span className="flex items-center gap-1"><FiStar className="text-amber-400 fill-current" /> {travel.rating} Rating</span>
                             <span className="flex items-center gap-1"><FiMapPin /> {travel.location}</span>
-                            <span>{travel.totalPackages} Paket Aktif</span>
+                            <span>{travelPackages.length} Paket Aktif</span>
                         </div>
 
                         <p className="text-slate-600 dark:text-slate-300 max-w-2xl">{travel.description}</p>
@@ -57,7 +100,9 @@ const TravelProfile = () => {
                             </ScrollReveal>
                         ))
                     ) : (
-                        <p className="col-span-3 text-center text-slate-500 py-12">Belum ada paket aktif saat ini.</p>
+                        <div className="col-span-3 text-center text-slate-500 py-12">
+                            <p>Belum ada paket aktif saat ini.</p>
+                        </div>
                     )}
                 </div>
             </div>

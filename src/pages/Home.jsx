@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
 import StatCounter from '../components/StatCounter';
@@ -6,14 +6,48 @@ import PackageCard from '../components/PackageCard';
 import PromoCard from '../components/PromoCard';
 import ScrollReveal from '../components/ScrollReveal';
 import TestimonialCarousel from '../components/TestimonialCarousel';
-import { packages } from '../data/packages';
-import { promos } from '../data/promos';
-import { reviews } from '../data/reviews';
+import { api } from '../services/api';
+// Keep static data as fallback initial state or for error handling
+import { packages as staticPackages } from '../data/packages';
+import { promos as staticPromos } from '../data/promos';
+import { reviews as staticReviews } from '../data/reviews';
 import { FiArrowRight, FiCheckCircle, FiShield, FiHeart } from 'react-icons/fi';
 
 const Home = () => {
-    const popularPackages = packages.slice(0, 3);
-    const activePromos = promos.slice(0, 4);
+    const [popularPackages, setPopularPackages] = useState(staticPackages.slice(0, 3));
+    const [activePromos, setActivePromos] = useState(staticPromos.slice(0, 4));
+    const [reviewsData, setReviewsData] = useState(staticReviews);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [packagesRes, promosRes, reviewsRes] = await Promise.all([
+                    api.getPackages({ sort: 'rating' }), // Fetch packages sorted by rating for "Popular"
+                    api.getPromos(),
+                    api.getReviews()
+                ]);
+
+                // Update state if API returns data, otherwise keep static fallback
+                if (packagesRes && packagesRes.length > 0) {
+                    setPopularPackages(packagesRes.slice(0, 3));
+                }
+                if (promosRes && promosRes.length > 0) {
+                    setActivePromos(promosRes.slice(0, 4));
+                }
+                if (reviewsRes && reviewsRes.length > 0) {
+                    setReviewsData(reviewsRes);
+                }
+            } catch (error) {
+                console.error("Failed to fetch home data:", error);
+                // Fallback is already set in initial state
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     return (
         <div className="overflow-x-hidden">
@@ -46,13 +80,17 @@ const Home = () => {
                         </div>
                     </ScrollReveal>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {popularPackages.map((pkg, index) => (
-                            <ScrollReveal key={pkg.id} delay={index * 0.1}>
-                                <PackageCard packageData={pkg} />
-                            </ScrollReveal>
-                        ))}
-                    </div>
+                    {loading ? (
+                        <div className="text-center py-12">Loading paket...</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {popularPackages.map((pkg, index) => (
+                                <ScrollReveal key={pkg.id} delay={index * 0.1}>
+                                    <PackageCard packageData={pkg} />
+                                </ScrollReveal>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -122,7 +160,7 @@ const Home = () => {
                         <h2 className="text-3xl font-serif font-bold mb-2">Apa Kata Mereka?</h2>
                         <p className="text-slate-500">Ribuan jamaah telah mempercayakan perjalanan mereka kepada kami</p>
                     </div>
-                    <TestimonialCarousel reviews={reviews} />
+                    <TestimonialCarousel reviews={reviewsData} />
                 </div>
             </section>
 
