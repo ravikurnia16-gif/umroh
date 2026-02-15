@@ -20,6 +20,16 @@ const asyncHandler = (fn) => (req, res, next) => {
 
 // Routes
 
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        time: new Date().toISOString(),
+        env: process.env.NODE_ENV,
+        port: PORT
+    });
+});
+
 // Get all packages
 app.get('/api/packages', asyncHandler(async (req, res) => {
     const { maxPrice, duration, travel_id, sort, q } = req.query;
