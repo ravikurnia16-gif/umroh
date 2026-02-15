@@ -14,6 +14,9 @@ import TravelProfile from './pages/TravelProfile';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
+import AgentPackages from './pages/dashboard/AgentPackages';
+import AdminAgents from './pages/dashboard/AdminAgents';
+import AdminVerify from './pages/dashboard/AdminVerify';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -39,9 +42,9 @@ function App() {
                 <DashboardLayout>
                   <Routes>
                     <Route path="/" element={<DashboardHome />} />
-                    <Route path="/packages" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Manajemen Paket (Coming Soon)</div>} />
-                    <Route path="/agents" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Kelola Agen (Coming Soon)</div>} />
-                    <Route path="/verify" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Verifikasi Agen (Coming Soon)</div>} />
+                    <Route path="/packages" element={<AgentPackages />} />
+                    <Route path="/agents" element={<AdminAgents />} />
+                    <Route path="/verify" element={<AdminVerify />} />
                     <Route path="/profile" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Pengaturan Profil (Coming Soon)</div>} />
                   </Routes>
                 </DashboardLayout>
