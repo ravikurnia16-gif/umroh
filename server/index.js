@@ -49,7 +49,7 @@ app.use(express.static(staticPath));
 // 5. API Routes
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { auth, JWT_SECRET } = require('./middleware/auth');
+const { auth, authorize, JWT_SECRET } = require('./middleware/auth');
 
 // 5. API Routes
 const asyncHandler = (fn) => (req, res, next) => {
@@ -183,6 +183,96 @@ app.get('/api/faq', asyncHandler(async (req, res) => {
 
 app.get('/api/reviews', asyncHandler(async (req, res) => {
     res.json(await prisma.review.findMany());
+}));
+
+// --- Management Routes (Protected) ---
+
+// Create Package (Agent only)
+app.post('/api/packages', auth, authorize('TRAVEL_AGENT', 'ADMIN'), asyncHandler(async (req, res) => {
+    const { title, price, duration, hotelMakkah, hotelMadinah, airlines, highlights, itinerary, facilities, terms, travelId } = req.body;
+
+    // If not Admin, forced to use their own travelId
+    const finalTravelId = req.user.role === 'ADMIN' ? travelId : req.user.travelId;
+
+    if (!finalTravelId) {
+        return res.status(400).json({ message: 'User must be linked to a Travel Agent' });
+    }
+
+    const pkg = await prisma.package.create({
+        data: {
+            title,
+            price: parseInt(price),
+            duration: parseInt(duration),
+            hotelMakkah,
+            hotelMadinah,
+            airlines,
+            highlights: highlights || [],
+            itinerary: itinerary || [],
+            facilities: facilities || [],
+            terms: terms || [],
+            travelId: finalTravelId
+        }
+    });
+    res.status(201).json(pkg);
+}));
+
+// Update Package (Owner or Admin)
+app.put('/api/packages/:id', auth, authorize('TRAVEL_AGENT', 'ADMIN'), asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const pkg = await prisma.package.findUnique({ where: { id } });
+
+    if (!pkg) return res.status(404).json({ message: 'Package not found' });
+
+    // Check ownership
+    if (req.user.role !== 'ADMIN' && pkg.travelId !== req.user.travelId) {
+        return res.status(403).json({ message: 'Unauthorized to update this package' });
+    }
+
+    const { title, price, duration, hotelMakkah, hotelMadinah, airlines, highlights, itinerary, facilities, terms } = req.body;
+
+    const updated = await prisma.package.update({
+        where: { id },
+        data: {
+            title,
+            price: price ? parseInt(price) : undefined,
+            duration: duration ? parseInt(duration) : undefined,
+            hotelMakkah,
+            hotelMadinah,
+            airlines,
+            highlights,
+            itinerary,
+            facilities,
+            terms
+        }
+    });
+    res.json(updated);
+}));
+
+// Delete Package (Owner or Admin)
+app.delete('/api/packages/:id', auth, authorize('TRAVEL_AGENT', 'ADMIN'), asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const pkg = await prisma.package.findUnique({ where: { id } });
+
+    if (!pkg) return res.status(404).json({ message: 'Package not found' });
+
+    if (req.user.role !== 'ADMIN' && pkg.travelId !== req.user.travelId) {
+        return res.status(403).json({ message: 'Unauthorized to delete this package' });
+    }
+
+    await prisma.package.delete({ where: { id } });
+    res.json({ success: true });
+}));
+
+// Verify Agent (Admin only)
+app.patch('/api/travels/:id/verify', auth, authorize('ADMIN'), asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { verified } = req.body;
+
+    const updated = await prisma.travelAgent.update({
+        where: { id },
+        data: { verified }
+    });
+    res.json(updated);
 }));
 
 // 6. SPA Catch-all (EVERYTHING else serves index.html)

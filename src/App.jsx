@@ -11,6 +11,9 @@ import Promo from './pages/Promo';
 import Guide from './pages/Guide';
 import Blog from './pages/Blog';
 import TravelProfile from './pages/TravelProfile';
+import ProtectedRoute from './components/ProtectedRoute';
+import DashboardLayout from './components/DashboardLayout';
+import DashboardHome from './pages/dashboard/DashboardHome';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -29,21 +32,43 @@ function App() {
       <Router>
         <ScrollToTop />
         <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans">
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/packages" element={<PackageList />} />
-              <Route path="/packages/:id" element={<PackageDetail />} />
-              <Route path="/promo" element={<Promo />} />
-              <Route path="/guide" element={<Guide />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:id" element={<div className="pt-24 container text-center py-20">Halaman Detail Artikel (Coming Soon)</div>} />
-              <Route path="/travel/:id" element={<TravelProfile />} />
-            </Routes>
-          </main>
-          <LiveChat />
-          <Footer />
+          <Routes>
+            {/* Dashboard Routes (No global Navbar/Footer) */}
+            <Route path="/dashboard/*" element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'TRAVEL_AGENT']}>
+                <DashboardLayout>
+                  <Routes>
+                    <Route path="/" element={<DashboardHome />} />
+                    <Route path="/packages" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Manajemen Paket (Coming Soon)</div>} />
+                    <Route path="/agents" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Kelola Agen (Coming Soon)</div>} />
+                    <Route path="/verify" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Verifikasi Agen (Coming Soon)</div>} />
+                    <Route path="/profile" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Pengaturan Profil (Coming Soon)</div>} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Public Routes (With global Navbar/Footer) */}
+            <Route path="*" element={
+              <>
+                <Navbar />
+                <main className="flex-grow">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/packages" element={<PackageList />} />
+                    <Route path="/packages/:id" element={<PackageDetail />} />
+                    <Route path="/promo" element={<Promo />} />
+                    <Route path="/guide" element={<Guide />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:id" element={<div className="pt-24 container text-center py-20">Halaman Detail Artikel (Coming Soon)</div>} />
+                    <Route path="/travel/:id" element={<TravelProfile />} />
+                  </Routes>
+                </main>
+                <LiveChat />
+                <Footer />
+              </>
+            } />
+          </Routes>
         </div>
       </Router>
     </ThemeProvider>
