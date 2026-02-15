@@ -12,6 +12,10 @@ WORKDIR /app
 
 # Copy server files
 COPY server/package*.json ./
+
+# Install system dependencies for Prisma (OpenSSL)
+RUN apk add --no-cache openssl
+
 # Install production dependencies for server
 RUN npm ci --omit=dev
 
