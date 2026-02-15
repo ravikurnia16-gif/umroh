@@ -128,16 +128,24 @@ app.use((err, req, res, next) => {
 const staticPath = path.resolve(__dirname, '../dist');
 const fs = require('fs');
 
+const listFiles = (dir, depth = 0) => {
+    if (depth > 1) return; // Only 2 levels deep
+    try {
+        const files = fs.readdirSync(dir);
+        files.forEach(file => {
+            const stats = fs.statSync(path.join(dir, file));
+            console.log(`${'  '.repeat(depth)}${stats.isDirectory() ? '📂' : '📄'} ${file}`);
+            if (stats.isDirectory()) listFiles(path.join(dir, file), depth + 1);
+        });
+    } catch (e) { }
+};
+
 console.log('--- Startup Diagnostics ---');
 console.log(`📂 Current Dir: ${__dirname}`);
 console.log(`📁 Static Path: ${staticPath}`);
 if (fs.existsSync(staticPath)) {
-    console.log('✅ Static directory found');
-    if (fs.existsSync(path.join(staticPath, 'index.html'))) {
-        console.log('✅ index.html found');
-    } else {
-        console.error('❌ index.html NOT found in static path');
-    }
+    console.log('✅ Static directory found. Contents:');
+    listFiles(staticPath);
 } else {
     console.error('❌ Static directory NOT found');
 }
@@ -145,9 +153,7 @@ console.log('---------------------------');
 
 // Request logger for debugging
 app.use((req, res, next) => {
-    if (!req.url.startsWith('/api')) {
-        // console.log(`[Static] ${req.url}`);
-    }
+    console.log(`[${new Date().toISOString().split('T')[1].split('.')[0]}] ${req.method} ${req.url}`);
     next();
 });
 
