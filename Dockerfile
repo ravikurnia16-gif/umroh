@@ -10,30 +10,31 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy server files
+# Copy the build output from the builder stage to /app/dist
+COPY --from=builder /app/dist ./dist
+
+# Set working directory to /app/server to match local structure
+WORKDIR /app/server
+
+# Copy server dependency definitions
 COPY server/package*.json ./
-
-# Install system dependencies for Prisma (OpenSSL)
-RUN apk add --no-cache openssl
-
-# Install production dependencies for server
 RUN npm ci --omit=dev
 
 # Copy server source code
 COPY server/ .
-COPY server/prisma ./prisma
+
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Copy the build output from the builder stage
-COPY --from=builder /app/dist ./dist
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=80
 
-# Expose port (EasyPanel defaults to 80)
+# Expose port
 EXPOSE 80
 
-# Start server (includes db sync and seed via npm start script)
+# Start server
 CMD ["npm", "start"]
