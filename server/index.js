@@ -125,14 +125,27 @@ app.use((err, req, res, next) => {
 });
 
 // Serve React App (Express 5 compatible wildcard)
-app.get('*all', (req, res) => {
+app.get('(.*)', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../dist/index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log('-------------------------------------------');
-    console.log(`🚀 Server started on port ${PORT}`);
-    console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`📁 Static files from: ${path.resolve(__dirname, '../dist')}`);
-    console.log('-------------------------------------------');
-});
+// Check database connection on startup
+async function startServer() {
+    try {
+        await prisma.$connect();
+        console.log('✅ Connected to Database successfully');
+    } catch (error) {
+        console.error('❌ Database connection failed:', error.message);
+        console.log('⚠️  App will continue to run, but database features will fail.');
+    }
+
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log('-------------------------------------------');
+        console.log(`🚀 Server started on port ${PORT}`);
+        console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
+        console.log(`📁 Static files from: ${path.resolve(__dirname, '../dist')}`);
+        console.log('-------------------------------------------');
+    });
+}
+
+startServer();
