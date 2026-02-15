@@ -31,10 +31,10 @@ RUN apk add --no-cache openssl
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=80
+ENV PORT=3000
 
 # Expose port
-EXPOSE 80
+EXPOSE 3000
 
 # Start server
 CMD ["npm", "start"]

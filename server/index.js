@@ -129,6 +129,10 @@ app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../dist/index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log('-------------------------------------------');
+    console.log(`🚀 Server started on port ${PORT}`);
+    console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`📁 Static files from: ${path.resolve(__dirname, '../dist')}`);
+    console.log('-------------------------------------------');
 });
