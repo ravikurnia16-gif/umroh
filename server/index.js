@@ -197,8 +197,16 @@ app.use((req, res, next) => {
 
 // 7. Final Error Handler
 app.use((err, req, res, next) => {
-    console.error('❌ Error:', err.message);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('❌ Error Details:', {
+        message: err.message,
+        stack: err.stack,
+        url: req.url,
+        method: req.method
+    });
+    res.status(500).json({
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 // 8. Start Server
@@ -215,6 +223,27 @@ function startServer() {
         prisma.$connect()
             .then(() => {
                 console.log('✅ Connected to Database successfully');
+
+                // Run db push to ensure tables exist
+                console.log('⌛ Syncing Database schema in background...');
+                const { exec } = require('child_process');
+                exec('npx prisma db push --accept-data-loss', (syncErr) => {
+                    if (syncErr) {
+                        console.error(`❌ DB Sync Error: ${syncErr.message}`);
+                        return;
+                    }
+                    console.log('✅ Database schema synced successfully');
+
+                    // Run seed
+                    console.log('⌛ Running background seeding...');
+                    exec('node prisma/seed.js', (seedErr) => {
+                        if (seedErr) {
+                            console.error(`❌ Seeding Error: ${seedErr.message}`);
+                            return;
+                        }
+                        console.log('✅ Seeding finished successfully');
+                    });
+                });
             })
             .catch((error) => {
                 console.error('❌ Database connection failed:', error.message);
