@@ -124,8 +124,13 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Serve React App (Express 5 compatible wildcard)
-app.get('(.*)', (req, res) => {
+// Serve React App (Catch-all middleware for SPA)
+app.use((req, res, next) => {
+    // If it's an API request, let the error handler or 404 handle it
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+    // For all other requests, serve index.html for client-side routing
     res.sendFile(path.resolve(__dirname, '../dist/index.html'));
 });
 
