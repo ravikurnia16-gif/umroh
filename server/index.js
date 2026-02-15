@@ -124,33 +124,59 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Serve React App (Catch-all middleware for SPA)
-app.use((req, res, next) => {
-    // If it's an API request, let the error handler or 404 handle it
-    if (req.path.startsWith('/api')) {
-        return next();
+// Check static path on startup
+const staticPath = path.resolve(__dirname, '../dist');
+const fs = require('fs');
+
+console.log('--- Startup Diagnostics ---');
+console.log(`📂 Current Dir: ${__dirname}`);
+console.log(`📁 Static Path: ${staticPath}`);
+if (fs.existsSync(staticPath)) {
+    console.log('✅ Static directory found');
+    if (fs.existsSync(path.join(staticPath, 'index.html'))) {
+        console.log('✅ index.html found');
+    } else {
+        console.error('❌ index.html NOT found in static path');
     }
-    // For all other requests, serve index.html for client-side routing
-    res.sendFile(path.resolve(__dirname, '../dist/index.html'));
+} else {
+    console.error('❌ Static directory NOT found');
+}
+console.log('---------------------------');
+
+// Request logger for debugging
+app.use((req, res, next) => {
+    if (!req.url.startsWith('/api')) {
+        // console.log(`[Static] ${req.url}`);
+    }
+    next();
 });
 
-// Check database connection on startup
+// Routes
+// (Keep existing API routes here - skipping for brevity in replacement, but ensure they are not deleted)
+
+// Serve React App (Catch-all middleware for SPA)
+// Only serve index.html for paths that don't look like files (no dots)
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.includes('.')) {
+        return next();
+    }
+    res.sendFile(path.join(staticPath, 'index.html'));
+});
+
+// Check database connection on startup (non-blocking)
 async function startServer() {
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server started on port ${PORT}`);
+        console.log(`🌐 Health check: /api/health`);
+    });
+
     try {
         await prisma.$connect();
         console.log('✅ Connected to Database successfully');
     } catch (error) {
         console.error('❌ Database connection failed:', error.message);
-        console.log('⚠️  App will continue to run, but database features will fail.');
+        console.log('⚠️  App will continue to run using fallback data if available.');
     }
-
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log('-------------------------------------------');
-        console.log(`🚀 Server started on port ${PORT}`);
-        console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
-        console.log(`📁 Static files from: ${path.resolve(__dirname, '../dist')}`);
-        console.log('-------------------------------------------');
-    });
 }
 
 startServer();
