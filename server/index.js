@@ -202,20 +202,33 @@ app.use((err, req, res, next) => {
 });
 
 // 8. Start Server
-async function startServer() {
-    console.log(`⌛ Connecting to Database...`);
-    try {
-        await prisma.$connect();
-        console.log('✅ Connected to Database successfully');
-    } catch (error) {
-        console.error('❌ Database connection failed:', error.message);
-    }
-
-    app.listen(PORT, '0.0.0.0', () => {
+function startServer() {
+    // Start listening right away so health checks pass
+    const server = app.listen(PORT, '0.0.0.0', () => {
         console.log('-------------------------------------------');
         console.log(`🚀 Server started on port ${PORT}`);
         console.log(`🌐 Health check: /api/health`);
         console.log('-------------------------------------------');
+
+        // Now try to connect to the database in the background
+        console.log(`⌛ Connecting to Database in background...`);
+        prisma.$connect()
+            .then(() => {
+                console.log('✅ Connected to Database successfully');
+            })
+            .catch((error) => {
+                console.error('❌ Database connection failed:', error.message);
+                console.log('⚠️ Server is running but database is not reachable.');
+            });
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+        console.log('SIGTERM signal received: closing HTTP server');
+        server.close(() => {
+            console.log('HTTP server closed');
+            prisma.$disconnect();
+        });
     });
 }
 
