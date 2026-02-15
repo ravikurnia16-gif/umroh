@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiLogOut, FiChevronDown } from 'react-icons/fi';
+import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiLogOut, FiChevronDown, FiBarChart2 } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
@@ -84,9 +84,22 @@ const Navbar = () => {
                                                 {user.role}
                                             </span>
                                         </div>
-                                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                        {(user.role === 'ADMIN' || user.role === 'TRAVEL_AGENT') && (
+                                            <Link
+                                                to="/dashboard"
+                                                onClick={() => setIsProfileOpen(false)}
+                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-primary-600 dark:text-primary-400 font-bold"
+                                            >
+                                                <FiBarChart2 className="text-primary-500" /> Dashboard
+                                            </Link>
+                                        )}
+                                        <Link
+                                            to={user.role === 'USER' ? '/profile' : '/dashboard/profile'}
+                                            onClick={() => setIsProfileOpen(false)}
+                                            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                        >
                                             <FiUser className="text-slate-400" /> Profil Saya
-                                        </button>
+                                        </Link>
                                         <button
                                             onClick={() => { logout(); setIsProfileOpen(false); }}
                                             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -137,6 +150,20 @@ const Navbar = () => {
                                         <p className="text-xs text-slate-500">{user.email}</p>
                                     </div>
                                 </div>
+
+                                {(user.role === 'ADMIN' || user.role === 'TRAVEL_AGENT') && (
+                                    <Link
+                                        to="/dashboard"
+                                        className="w-full py-3 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-bold rounded-xl flex items-center justify-center gap-2"
+                                    >
+                                        <FiBarChart2 /> Dashboard Management
+                                    </Link>
+                                )}
+
+                                <Link to={user.role === 'USER' ? '/profile' : '/dashboard/profile'} className="py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                                    <FiUser /> Profil Saya
+                                </Link>
+
                                 <button
                                     onClick={() => { logout(); setIsOpen(false); }}
                                     className="w-full py-3 text-red-600 font-medium flex items-center justify-center gap-2"
