@@ -1,5 +1,5 @@
 # Stage 1: Build the React application
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -7,14 +7,14 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Setup Backend Server
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
 
 # Copy the build output from the builder stage to /app/dist
 COPY --from=builder /app/dist ./dist
 
-# Install system dependencies (Required for Prisma on Alpine)
-RUN apk add --no-cache openssl libc6-compat
+# Install system dependencies (Required for Prisma on Debian)
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Set working directory to /app/server
 WORKDIR /app/server
@@ -22,10 +22,10 @@ WORKDIR /app/server
 # Copy server dependency definitions
 COPY server/package*.json ./
 
-# Install dependencies (Skip scripts to avoid failure while schema is missing)
+# Install dependencies
 RUN npm ci --omit=dev --ignore-scripts
 
-# Copy server source code (including prisma/schema.prisma)
+# Copy server source code
 COPY server/ .
 
 # Generate Prisma Client
