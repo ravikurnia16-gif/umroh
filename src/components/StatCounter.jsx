@@ -1,22 +1,27 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useInView, motion, animate } from 'framer-motion';
 
-const StatCounter = ({ from, to, label, prefix = "", suffix = "" }) => {
+const StatCounter = ({ from = 0, end, to, label, prefix = "", suffix = "" }) => {
     const nodeRef = useRef();
     const inView = useInView(nodeRef, { once: true });
 
+    // Support both 'to' and 'end' prop names
+    const targetValue = end !== undefined ? end : (to !== undefined ? to : 0);
+
     useEffect(() => {
-        if (inView) {
+        if (inView && targetValue !== undefined) {
             const node = nodeRef.current;
-            const controls = animate(from, to, {
+            const controls = animate(from, targetValue, {
                 duration: 2,
                 onUpdate(value) {
-                    node.textContent = `${prefix}${Math.round(value).toLocaleString()}${suffix}`;
+                    if (node) {
+                        node.textContent = `${prefix}${Math.round(value).toLocaleString()}${suffix}`;
+                    }
                 }
             });
             return () => controls.stop();
         }
-    }, [from, to, inView, prefix, suffix]);
+    }, [from, targetValue, inView, prefix, suffix]);
 
     return (
         <div className="text-center">
