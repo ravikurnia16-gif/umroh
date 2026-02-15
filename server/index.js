@@ -115,8 +115,8 @@ app.use((err, req, res, next) => {
 });
 
 // Serve React App (Express 5 compatible wildcard)
-app.get(/(.*)/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../dist/index.html'));
 });
 
 app.listen(PORT, () => {
