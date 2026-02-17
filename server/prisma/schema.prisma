@@ -13,13 +13,15 @@ datasource db {
 
 model User {
   id            Int          @id @default(autoincrement())
-  email         String       @unique
-  password      String       // Hashed
+  email         String?      @unique
+  password      String?      // Optional for OTP-only auth
   name          String?
-  phone         String?
+  phone         String?      @unique
   role          String       @default("USER") // ADMIN, TRAVEL_AGENT, USER
   isVerified    Boolean      @default(false)
   verificationToken String?  @db.Text
+  otp           String?
+  otpExpires    DateTime?
   travelId      Int?         // Only for TRAVEL_AGENT
   travelAgent   TravelAgent? @relation(fields: [travelId], references: [id])
   createdAt     DateTime     @default(now())

@@ -16,6 +16,7 @@ import DashboardLayout from './components/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import AgentPackages from './pages/dashboard/AgentPackages';
 import AdminAgents from './pages/dashboard/AdminAgents';
+import AdminUsers from './pages/dashboard/AdminUsers';
 import AdminVerify from './pages/dashboard/AdminVerify';
 import VerifyEmail from './pages/VerifyEmail';
 
@@ -45,6 +46,7 @@ function App() {
                     <Route path="/" element={<DashboardHome />} />
                     <Route path="/packages" element={<AgentPackages />} />
                     <Route path="/agents" element={<AdminAgents />} />
+                    <Route path="/users" element={<AdminUsers />} />
                     <Route path="/verify" element={<AdminVerify />} />
                     <Route path="/profile" element={<div className="bg-white dark:bg-slate-800 p-10 rounded-3xl text-center">Modul Pengaturan Profil (Coming Soon)</div>} />
                   </Routes>

@@ -42,4 +42,34 @@ const sendVerificationEmail = async (email, token) => {
     }
 };
 
-module.exports = { sendVerificationEmail };
+const sendOTPEmail = async (email, otp) => {
+    const mailOptions = {
+        from: '"UmrohPedia Team" <no-reply@umrohpedia.com>',
+        to: email,
+        subject: `${otp} adalah kode verifikasi UmrohPedia Anda`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #059669; text-align: center;">Kode Verifikasi Anda</h2>
+                <p>Halo,</p>
+                <p>Gunakan kode berikut untuk masuk atau mendaftar di UmrohPedia:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #059669; background: #f0fdf4; padding: 10px 20px; border-radius: 8px;">${otp}</span>
+                </div>
+                <p>Kode ini akan kedaluwarsa dalam 10 menit. Jangan berikan kode ini kepada siapapun.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 12px; color: #999; text-align: center;">Jika Anda tidak meminta kode ini, silakan abaikan email ini.</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`OTP email sent to ${email}`);
+        return true;
+    } catch (error) {
+        console.error('Error sending OTP:', error);
+        return false;
+    }
+};
+
+module.exports = { sendVerificationEmail, sendOTPEmail };

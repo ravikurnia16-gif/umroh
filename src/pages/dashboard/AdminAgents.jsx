@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { FiUsers, FiCheckCircle, FiXCircle, FiMoreVertical, FiSearch, FiExternalLink } from 'react-icons/fi';
+import { FiUsers, FiCheckCircle, FiXCircle, FiMoreVertical, FiSearch, FiExternalLink, FiPlus, FiMapPin, FiMail, FiLock, FiUser, FiPhone, FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminAgents = () => {
     const [agents, setAgents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [submitLoading, setSubmitLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        agencyName: '',
+        name: '',
+        email: '',
+        phone: '',
+        location: ''
+    });
 
     useEffect(() => {
         fetchAgents();
@@ -43,6 +53,36 @@ const AdminAgents = () => {
         }
     };
 
+    const handleCreateAgent = async (e) => {
+        e.preventDefault();
+        setSubmitLoading(true);
+        try {
+            const response = await fetch('/api/admin/agents', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                alert('Biro Perjalanan & Akun Agen berhasil dibuat!');
+                setIsModalOpen(false);
+                setFormData({ agencyName: '', name: '', email: '', phone: '', location: '' });
+                fetchAgents();
+            } else {
+                const err = await response.json();
+                alert(err.message || 'Gagal menambahkan agen');
+            }
+        } catch (error) {
+            console.error('Error creating agent:', error);
+            alert('Terjadi kesalahan koneksi');
+        } finally {
+            setSubmitLoading(false);
+        }
+    };
+
     const filteredAgents = agents.filter(agent =>
         agent.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -54,6 +94,12 @@ const AdminAgents = () => {
                     <h2 className="text-2xl font-bold">Kelola Agen Travel</h2>
                     <p className="text-slate-500 text-sm">Monitor dan kelola status mitra biro perjalanan.</p>
                 </div>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-primary-500/30"
+                >
+                    <FiPlus /> Tambah Agen
+                </button>
             </div>
 
             {/* Stats Summary */}
@@ -131,8 +177,8 @@ const AdminAgents = () => {
                                             <button
                                                 onClick={() => toggleVerify(agent.id, agent.verified)}
                                                 className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${agent.verified
-                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                                                     }`}
                                             >
                                                 {agent.verified ? 'Verified' : 'Unverified'}
@@ -166,6 +212,97 @@ const AdminAgents = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Add Agent Modal */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setIsModalOpen(false)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                            className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 max-h-[90vh] overflow-y-auto"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold">Tambah Biro Travel Baru</h3>
+                                <button onClick={() => setIsModalOpen(false)}><FiX size={20} /></button>
+                            </div>
+
+                            <form onSubmit={handleCreateAgent} className="space-y-4">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-4 border border-slate-100 dark:border-slate-700">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary-500">Informasi Biro Perjalanan</p>
+                                    <div>
+                                        <label className="block text-xs font-medium mb-1">Nama Biro / Agency</label>
+                                        <div className="relative">
+                                            <FiPackage className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input type="text" required placeholder="Contoh: Al-Haramain Travel"
+                                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800"
+                                                value={formData.agencyName} onChange={e => setFormData({ ...formData, agencyName: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium mb-1">Lokasi (Kota)</label>
+                                        <div className="relative">
+                                            <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input type="text" required placeholder="Contoh: Jakarta Selatan"
+                                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800"
+                                                value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-4 border border-slate-100 dark:border-slate-700">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">Informasi Pemilik / Admin Agen</p>
+                                    <div>
+                                        <label className="block text-xs font-medium mb-1">Nama Personal</label>
+                                        <div className="relative">
+                                            <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input type="text" required placeholder="Nama lengkap pengelola"
+                                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800"
+                                                value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1">Nomor WhatsApp</label>
+                                            <div className="relative">
+                                                <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input type="tel" required placeholder="0812..."
+                                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none"
+                                                    value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium mb-1">Email (Opsional)</label>
+                                            <div className="relative">
+                                                <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input type="email" placeholder="email@travel.com"
+                                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none"
+                                                    value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 mt-6">
+                                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold">Batal</button>
+                                    <button type="submit" disabled={submitLoading} className="flex-1 py-3 rounded-xl bg-primary-600 text-white font-bold hover:bg-primary-700 shadow-lg shadow-primary-500/30">
+                                        {submitLoading ? 'Memproses...' : 'Daftarkan Agen'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

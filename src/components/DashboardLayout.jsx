@@ -47,6 +47,12 @@ const DashboardLayout = ({ children }) => {
             roles: ['ADMIN']
         },
         {
+            title: 'Kelola Jamaah',
+            path: '/dashboard/users',
+            icon: <FiUsers />, // Reuse FiUsers or import another if needed
+            roles: ['ADMIN']
+        },
+        {
             title: 'Profil Saya',
             path: '/dashboard/profile',
             icon: <FiUser />,
@@ -95,8 +101,8 @@ const DashboardLayout = ({ children }) => {
                                 key={item.path}
                                 to={item.path}
                                 className={`group flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ${location.pathname === item.path
-                                        ? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-xl shadow-primary-500/25 ring-4 ring-primary-500/10'
-                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                                    ? 'bg-gradient-to-r from-primary-600 to-indigo-600 text-white shadow-xl shadow-primary-500/25 ring-4 ring-primary-500/10'
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                                     }`}
                             >
                                 <span className={`text-xl transition-transform group-hover:scale-110 ${location.pathname === item.path ? 'text-white' : 'text-slate-400 group-hover:text-primary-500'}`}>

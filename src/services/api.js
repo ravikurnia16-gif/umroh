@@ -10,7 +10,65 @@ const getHeaders = () => {
 };
 
 export const api = {
+    // Generic Fetch Wrapper
+    get: async (url) => {
+        const response = await fetch(url, { headers: getHeaders() });
+        if (!response.ok) {
+            const error = await response.json();
+            throw { response: { data: error } };
+        }
+        return response.json();
+    },
+    post: async (url, data) => {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw { response: { data: error } };
+        }
+        return response; // Return raw response for data handling in context
+    },
+    patch: async (url, data) => {
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw { response: { data: error } };
+        }
+        return response.json();
+    },
+
     // Auth
+    requestOTP: async (data) => {
+        const response = await fetch(`${API_URL}/auth/request-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw { response: { data: error } };
+        }
+        return response.json();
+    },
+    verifyOTP: async (phone, otp) => {
+        const response = await fetch(`${API_URL}/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, otp })
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw { response: { data: error } };
+        }
+        return response.json();
+    },
     login: async (email, password) => {
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',

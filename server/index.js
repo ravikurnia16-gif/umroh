@@ -56,92 +56,92 @@ const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-const { sendVerificationEmail } = require('./utils/email');
+const { sendVerificationEmail, sendOTPEmail } = require('./utils/email');
 const crypto = require('crypto');
 
-// --- Auth Routes ---
-app.post('/api/auth/register', asyncHandler(async (req, res) => {
-    const { email, password, name, phone, role } = req.body;
+// Helper to generate 6-digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+// --- Auth Routes (WhatsApp OTP Based) ---
+
+// 1. Request OTP (Unified Register/Login)
+app.post('/api/auth/request-otp', asyncHandler(async (req, res) => {
+    const { phone, name } = req.body;
+
+    if (!phone) {
+        return res.status(400).json({ message: 'Nomor WhatsApp wajib diisi' });
     }
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const hashedPassword = await bcrypt.hash(password, 10);
+    let user = await prisma.user.findUnique({ where: { phone } });
 
-    const user = await prisma.user.create({
-        data: {
-            email,
-            password: hashedPassword,
-            name,
-            phone,
-            role: role || 'USER',
-            isVerified: false,
-            verificationToken
-        }
-    });
-
-    // Send verification email
-    const emailSent = await sendVerificationEmail(email, verificationToken);
-
-    if (!emailSent) {
-        // Optional: rollback user creation if email fails
-        // await prisma.user.delete({ where: { id: user.id } });
-        // return res.status(500).json({ message: 'Failed to send verification email' });
-        console.warn('Failed to send verification email');
-    }
-
-    res.status(201).json({
-        message: 'Registration successful. Please check your email to verify your account.',
-        userId: user.id
-    });
-}));
-
-app.get('/api/auth/verify', asyncHandler(async (req, res) => {
-    const { token } = req.query;
-
-    if (!token) {
-        return res.status(400).json({ message: 'Missing verification token' });
-    }
-
-    const user = await prisma.user.findFirst({ where: { verificationToken: token } });
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
     if (!user) {
-        return res.status(400).json({ message: 'Invalid or expired token' });
+        // Create new user (Instant registration)
+        user = await prisma.user.create({
+            data: {
+                phone,
+                name: name || 'Jamaah',
+                role: 'USER',
+                isVerified: false,
+                otp,
+                otpExpires
+            }
+        });
+    } else {
+        // Update existing user (Login)
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                otp,
+                otpExpires,
+                // Update name if provided and user doesn't have one
+                ...(name && !user.name ? { name } : {})
+            }
+        });
     }
 
+    // SIMULASI WA OTP - Log ke console
+    console.log('------------------------------------');
+    console.log(`WA OTP untuk ${phone} (${user.name}): ${otp}`);
+    console.log('------------------------------------');
+
+    res.json({ message: 'Kode OTP telah dikirim melalui WhatsApp' });
+}));
+
+// 2. Verify OTP
+app.post('/api/auth/verify-otp', asyncHandler(async (req, res) => {
+    const { phone, otp } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { phone } });
+
+    if (!user || user.otp !== otp || new Date() > user.otpExpires) {
+        return res.status(400).json({ message: 'Kode OTP tidak valid atau sudah kedaluwarsa' });
+    }
+
+    // Success: Update user
     await prisma.user.update({
         where: { id: user.id },
         data: {
-            isVerified: true,
-            verificationToken: null
+            otp: null,
+            otpExpires: null,
+            isVerified: true
         }
     });
 
-    res.json({ message: 'Email verified successfully. You can now login.' });
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token, user: { id: user.id, phone: user.phone, name: user.name, role: user.role } });
+}));
+
+// Legacy routes preserved for compatibility or removed if requested
+app.post('/api/auth/register', asyncHandler(async (req, res) => {
+    // Redirecting to request-otp logic
+    res.status(400).json({ message: 'Gunakan endpoint request-otp' });
 }));
 
 app.post('/api/auth/login', asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    if (!user.isVerified) {
-        return res.status(403).json({ message: 'Please verify your email address before logging in.' });
-    }
-
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    res.status(400).json({ message: 'Gunakan endpoint request-otp' });
 }));
 
 app.get('/api/auth/me', auth, asyncHandler(async (req, res) => {
@@ -320,6 +320,77 @@ app.patch('/api/travels/:id/verify', auth, authorize('ADMIN'), asyncHandler(asyn
         data: { verified }
     });
     res.json(updated);
+}));
+
+// Get all users (Admin only)
+app.get('/api/admin/users', auth, authorize('ADMIN'), asyncHandler(async (req, res) => {
+    const users = await prisma.user.findMany({
+        where: { role: 'USER' },
+        orderBy: { createdAt: 'desc' }
+    });
+    res.json(users);
+}));
+
+// Admin Create User (Jamaah)
+app.post('/api/admin/users', auth, authorize('ADMIN'), asyncHandler(async (req, res) => {
+    const { name, email, password, phone } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+        return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+        data: {
+            email,
+            password: hashedPassword,
+            name,
+            phone,
+            role: 'USER',
+            isVerified: true // Admin created users are auto-verified
+        }
+    });
+
+    res.status(201).json({ message: 'User created successfully', user });
+}));
+
+// Admin Create Agent
+app.post('/api/admin/agents', auth, authorize('ADMIN'), asyncHandler(async (req, res) => {
+    const { agencyName, name, email, password, phone, location } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+        return res.status(400).json({ message: 'User email already exists' });
+    }
+
+    // 1. Create Travel Agent Record
+    const travelAgent = await prisma.travelAgent.create({
+        data: {
+            name: agencyName,
+            location: location || 'Indonesia',
+            description: `Agen resmi ${agencyName}`,
+            verified: true // Admin created agents can be auto-verified
+        }
+    });
+
+    // 2. Create User Record Linked to Agent
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+        data: {
+            email,
+            password: hashedPassword,
+            name,
+            phone,
+            role: 'TRAVEL_AGENT',
+            isVerified: true,
+            travelId: travelAgent.id
+        }
+    });
+
+    res.status(201).json({ message: 'Agent created successfully', user, travelAgent });
 }));
 
 // Dashboard Stats (Protected)

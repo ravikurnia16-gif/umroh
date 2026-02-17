@@ -25,25 +25,23 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    const login = async (email, password) => {
+    const requestOTP = async (data) => {
         try {
-            const response = await api.login(email, password);
-            localStorage.setItem('token', response.token);
-            setUser(response.user);
+            await api.post('/api/auth/request-otp', data);
             return { success: true };
         } catch (error) {
-            return { success: false, message: error.response?.data?.message || 'Login failed' };
+            return { success: false, message: error.response?.data?.message || 'Gagal meminta OTP' };
         }
     };
 
-    const register = async (userData) => {
+    const verifyOTP = async (phone, otp) => {
         try {
-            const response = await api.register(userData);
-            localStorage.setItem('token', response.token);
-            setUser(response.user);
+            const response = await api.post('/api/auth/verify-otp', { phone, otp });
+            localStorage.setItem('token', response.data.token);
+            setUser(response.data.user);
             return { success: true };
         } catch (error) {
-            return { success: false, message: error.response?.data?.message || 'Registration failed' };
+            return { success: false, message: error.response?.data?.message || 'Kode OTP salah' };
         }
     };
 
@@ -53,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, loading, requestOTP, verifyOTP, logout }}>
             {children}
         </AuthContext.Provider>
     );
