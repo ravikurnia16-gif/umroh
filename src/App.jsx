@@ -17,6 +17,7 @@ import DashboardHome from './pages/dashboard/DashboardHome';
 import AgentPackages from './pages/dashboard/AgentPackages';
 import AdminAgents from './pages/dashboard/AdminAgents';
 import AdminVerify from './pages/dashboard/AdminVerify';
+import VerifyEmail from './pages/VerifyEmail';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -65,6 +66,7 @@ function App() {
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/blog/:id" element={<div className="pt-24 container text-center py-20">Halaman Detail Artikel (Coming Soon)</div>} />
                     <Route path="/travel/:id" element={<TravelProfile />} />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
                   </Routes>
                 </main>
                 <LiveChat />

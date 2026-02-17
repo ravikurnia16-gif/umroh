@@ -56,6 +56,9 @@ const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
+const { sendVerificationEmail } = require('./utils/email');
+const crypto = require('crypto');
+
 // --- Auth Routes ---
 app.post('/api/auth/register', asyncHandler(async (req, res) => {
     const { email, password, name, phone, role } = req.body;
@@ -65,19 +68,59 @@ app.post('/api/auth/register', asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'User already exists' });
     }
 
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = await prisma.user.create({
         data: {
             email,
             password: hashedPassword,
             name,
             phone,
-            role: role || 'USER'
+            role: role || 'USER',
+            isVerified: false,
+            verificationToken
         }
     });
 
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-    res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    // Send verification email
+    const emailSent = await sendVerificationEmail(email, verificationToken);
+
+    if (!emailSent) {
+        // Optional: rollback user creation if email fails
+        // await prisma.user.delete({ where: { id: user.id } });
+        // return res.status(500).json({ message: 'Failed to send verification email' });
+        console.warn('Failed to send verification email');
+    }
+
+    res.status(201).json({
+        message: 'Registration successful. Please check your email to verify your account.',
+        userId: user.id
+    });
+}));
+
+app.get('/api/auth/verify', asyncHandler(async (req, res) => {
+    const { token } = req.query;
+
+    if (!token) {
+        return res.status(400).json({ message: 'Missing verification token' });
+    }
+
+    const user = await prisma.user.findFirst({ where: { verificationToken: token } });
+
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            isVerified: true,
+            verificationToken: null
+        }
+    });
+
+    res.json({ message: 'Email verified successfully. You can now login.' });
 }));
 
 app.post('/api/auth/login', asyncHandler(async (req, res) => {
@@ -91,6 +134,10 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
         return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isVerified) {
+        return res.status(403).json({ message: 'Please verify your email address before logging in.' });
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });

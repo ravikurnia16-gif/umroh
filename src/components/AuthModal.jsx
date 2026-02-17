@@ -15,6 +15,8 @@ const AuthModal = ({ isOpen, onClose }) => {
         phone: ''
     });
 
+    const [isSuccess, setIsSuccess] = useState(false);
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         if (error) setError('');
@@ -34,7 +36,11 @@ const AuthModal = ({ isOpen, onClose }) => {
             }
 
             if (result.success) {
-                onClose();
+                if (!isLogin) {
+                    setIsSuccess(true);
+                } else {
+                    onClose();
+                }
             } else {
                 setError(result.message);
             }
@@ -74,103 +80,129 @@ const AuthModal = ({ isOpen, onClose }) => {
                     </button>
 
                     <div className="p-8">
-                        <div className="text-center mb-8">
-                            <h2 className="text-2xl font-bold mb-2 font-serif text-slate-800 dark:text-white">
-                                {isLogin ? 'Selamat Datang Kembali' : 'Buat Akun Baru'}
-                            </h2>
-                            <p className="text-slate-500 dark:text-slate-400">
-                                {isLogin
-                                    ? 'Masuk untuk mengelola perjalanan ibadah Anda'
-                                    : 'Daftar sekarang untuk mendapatkan penawaran terbaik'}
-                            </p>
-                        </div>
-
-                        {error && (
-                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl flex items-center gap-3 text-red-600 dark:text-red-400 text-sm">
-                                <FiAlertCircle className="shrink-0" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {!isLogin && (
-                                <>
-                                    <div className="relative">
-                                        <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            placeholder="Nama Lengkap"
-                                            required
-                                            value={formData.name}
-                                            onChange={handleChange}
-                                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                                        />
-                                    </div>
-                                    <div className="relative">
-                                        <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            placeholder="Nomor WhatsApp"
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            <div className="relative">
-                                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Alamat Email"
-                                    required
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                                />
-                            </div>
-
-                            <div className="relative">
-                                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="password"
-                                    name="password"
-                                    placeholder="Kata Sandi"
-                                    required
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none transition-all flex items-center justify-center gap-2"
-                            >
-                                {loading ? <FiLoader className="animate-spin" /> : null}
-                                {isLogin ? 'Masuk Sekarang' : 'Daftar Akun'}
-                            </button>
-                        </form>
-
-                        <div className="mt-8 text-center">
-                            <p className="text-slate-500 dark:text-slate-400">
-                                {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
+                        {isSuccess ? (
+                            <div className="text-center py-8">
+                                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <FiMail className="text-4xl text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <h2 className="text-2xl font-bold mb-4 font-serif text-slate-800 dark:text-white">
+                                    Cek Email Anda
+                                </h2>
+                                <p className="text-slate-500 dark:text-slate-400 mb-8">
+                                    Kami telah mengirimkan tautan verifikasi ke <strong>{formData.email}</strong>. Silakan periksa kotak masuk (atau spam) Anda untuk mengaktifkan akun.
+                                </p>
                                 <button
                                     onClick={() => {
-                                        setIsLogin(!isLogin);
-                                        setError('');
+                                        setIsSuccess(false);
+                                        setIsLogin(true);
+                                        onClose();
                                     }}
-                                    className="ml-2 font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none transition-all"
                                 >
-                                    {isLogin ? 'Daftar Disini' : 'Masuk Disini'}
+                                    Mengerti, Saya akan Login
                                 </button>
-                            </p>
-                        </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="text-center mb-8">
+                                    <h2 className="text-2xl font-bold mb-2 font-serif text-slate-800 dark:text-white">
+                                        {isLogin ? 'Selamat Datang Kembali' : 'Buat Akun Baru'}
+                                    </h2>
+                                    <p className="text-slate-500 dark:text-slate-400">
+                                        {isLogin
+                                            ? 'Masuk untuk mengelola perjalanan ibadah Anda'
+                                            : 'Daftar sekarang untuk mendapatkan penawaran terbaik'}
+                                    </p>
+                                </div>
+
+                                {error && (
+                                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl flex items-center gap-3 text-red-600 dark:text-red-400 text-sm">
+                                        <FiAlertCircle className="shrink-0" />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    {!isLogin && (
+                                        <>
+                                            <div className="relative">
+                                                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input
+                                                    type="text"
+                                                    name="name"
+                                                    placeholder="Nama Lengkap"
+                                                    required
+                                                    value={formData.name}
+                                                    onChange={handleChange}
+                                                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    placeholder="Nomor WhatsApp"
+                                                    value={formData.phone}
+                                                    onChange={handleChange}
+                                                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className="relative">
+                                        <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            placeholder="Alamat Email"
+                                            required
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                        />
+                                    </div>
+
+                                    <div className="relative">
+                                        <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            placeholder="Kata Sandi"
+                                            required
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? <FiLoader className="animate-spin" /> : null}
+                                        {isLogin ? 'Masuk Sekarang' : 'Daftar Akun'}
+                                    </button>
+                                </form>
+
+                                <div className="mt-8 text-center">
+                                    <p className="text-slate-500 dark:text-slate-400">
+                                        {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
+                                        <button
+                                            onClick={() => {
+                                                setIsLogin(!isLogin);
+                                                setError('');
+                                            }}
+                                            className="ml-2 font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                                        >
+                                            {isLogin ? 'Daftar Disini' : 'Masuk Disini'}
+                                        </button>
+                                    </p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </motion.div>
             </div>

@@ -18,6 +18,8 @@ model User {
   name          String?
   phone         String?
   role          String       @default("USER") // ADMIN, TRAVEL_AGENT, USER
+  isVerified    Boolean      @default(false)
+  verificationToken String?  @db.Text
   travelId      Int?         // Only for TRAVEL_AGENT
   travelAgent   TravelAgent? @relation(fields: [travelId], references: [id])
   createdAt     DateTime     @default(now())
