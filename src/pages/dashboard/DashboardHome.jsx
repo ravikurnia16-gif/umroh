@@ -5,17 +5,41 @@ import { FiTrendingUp, FiPackage, FiUsers, FiAward } from 'react-icons/fi';
 const DashboardHome = () => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
+    const [dbStats, setDbStats] = React.useState(null);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('/api/dashboard/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setDbStats(data);
+                }
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
 
     const stats = isAdmin ? [
-        { label: 'Total Agen', value: '12', icon: <FiUsers className="text-blue-500" />, trend: '+2 bulan ini' },
-        { label: 'Total Paket', value: '84', icon: <FiPackage className="text-purple-500" />, trend: '+5 minggu ini' },
-        { label: 'Pendaftar Baru', value: '156', icon: <FiTrendingUp className="text-green-500" />, trend: '+12% hari ini' },
-        { label: 'Agen Terverifikasi', value: '8', icon: <FiAward className="text-amber-500" />, trend: '80% dari total' },
+        { label: 'Total Agen', value: loading ? '...' : (dbStats?.totalAgents || 0), icon: <FiUsers className="text-blue-500" />, trend: 'Terdaftar' },
+        { label: 'Total Paket', value: loading ? '...' : (dbStats?.totalPackages || 0), icon: <FiPackage className="text-purple-500" />, trend: 'Seluruh Agen' },
+        { label: 'Total User', value: loading ? '...' : (dbStats?.totalUsers || 0), icon: <FiTrendingUp className="text-green-500" />, trend: 'Jamaah Terdaftar' },
+        { label: 'Agen Terverifikasi', value: loading ? '...' : (dbStats?.verifiedAgents || 0), icon: <FiAward className="text-amber-500" />, trend: 'Trusted Partner' },
     ] : [
-        { label: 'Paket Aktif', value: '15', icon: <FiPackage className="text-blue-500" />, trend: '3 baru tayang' },
-        { label: 'Total Klik', value: '1.2k', icon: <FiTrendingUp className="text-purple-500" />, trend: '+15% minggu ini' },
-        { label: 'Peminat Baru', value: '42', icon: <FiUsers className="text-green-500" />, trend: 'Menunggu respon' },
-        { label: 'Rating Agen', value: '4.8', icon: <FiAward className="text-amber-500" />, trend: 'Sangat baik' },
+        { label: 'Paket Aktif', value: loading ? '...' : (dbStats?.activePackages || 0), icon: <FiPackage className="text-blue-500" />, trend: 'Tayang' },
+        { label: 'Total Views', value: loading ? '...' : (dbStats?.totalViews || 0), icon: <FiTrendingUp className="text-purple-500" />, trend: 'Bulan ini' },
+        { label: 'Pemesanan', value: loading ? '...' : (dbStats?.pendingBookings || 0), icon: <FiUsers className="text-green-500" />, trend: 'Menunggu' },
+        { label: 'Rating Agen', value: loading ? '...' : (dbStats?.rating || 0), icon: <FiAward className="text-amber-500" />, trend: 'Rata-rata' },
     ];
 
     return (

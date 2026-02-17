@@ -275,6 +275,44 @@ app.patch('/api/travels/:id/verify', auth, authorize('ADMIN'), asyncHandler(asyn
     res.json(updated);
 }));
 
+// Dashboard Stats (Protected)
+app.get('/api/dashboard/stats', auth, asyncHandler(async (req, res) => {
+    let stats = {};
+
+    if (req.user.role === 'ADMIN') {
+        const totalAgents = await prisma.travelAgent.count();
+        const verifiedAgents = await prisma.travelAgent.count({ where: { verified: true } });
+        const totalPackages = await prisma.package.count();
+        const totalUsers = await prisma.user.count({ where: { role: 'USER' } });
+
+        stats = {
+            totalAgents,
+            verifiedAgents,
+            totalPackages,
+            totalUsers
+        };
+    } else if (req.user.role === 'TRAVEL_AGENT') {
+        if (!req.user.travelId) {
+            return res.status(400).json({ message: 'User not linked to travel agent' });
+        }
+        const myPackages = await prisma.package.count({ where: { travelId: req.user.travelId } });
+        const myRef = await prisma.travelAgent.findUnique({
+            where: { id: req.user.travelId },
+            include: { _count: { select: { packages: true } } }
+        });
+
+        // Mock data for bookings/views until those tables exist
+        stats = {
+            activePackages: myPackages,
+            totalViews: Math.floor(Math.random() * 500) + 50, // Mock
+            pendingBookings: 0, // Mock
+            rating: 4.8 // Mock
+        };
+    }
+
+    res.json(stats);
+}));
+
 // 6. SPA Catch-all (EVERYTHING else serves index.html)
 app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
